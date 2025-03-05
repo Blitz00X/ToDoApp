@@ -20,7 +20,7 @@ public class ToDoAppFX extends Application {
     private TextField taskField;
     private static final String FILE_NAME = "tasks.txt";
 
-    @Override
+        @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("To-Doer");
 
@@ -29,6 +29,9 @@ public class ToDoAppFX extends Application {
         root.setExpanded(true);
         taskTree = new TreeView<>(root);
         taskTree.setShowRoot(true);
+
+        // `TreeView`'in focus almasını engelle
+        taskTree.setFocusTraversable(false);
 
         // Input field and buttons
         taskField = new TextField();
@@ -49,18 +52,20 @@ public class ToDoAppFX extends Application {
 
         Scene scene = new Scene(layout, 500, 500);
         primaryStage.setScene(scene);
-        scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
         primaryStage.show();
+
+        // Seçili öğenin rengini gri yapmak için CSS dosyasını yükle
+        scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+
+        // Eğer taskField odaklanmamışsa tekrar focus ver
+        scene.setOnMouseClicked(event -> {
+            if (!taskField.isFocused()) {
+                Platform.runLater(taskField::requestFocus);
+            }
+        });
 
         // Load tasks from file
         loadTasksFromFile();
-
-        // Kullanıcı bir öğeye tıkladığında eğer `taskField` odaklanmamışsa odaklan
-        taskTree.setOnMouseClicked(event -> {
-            if (!taskField.isFocused()) {
-                Platform.runLater(() -> taskField.requestFocus());
-            }
-        });
 
         // Setup keyboard shortcuts
         setupKeyboardShortcuts(scene);
