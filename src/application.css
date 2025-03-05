@@ -1,0 +1,9 @@
+/* Seçili öğeyi gri yapmak */
+.tree-cell:filled:selected {
+    -fx-background-color: #d3d3d3; /* Açık gri */
+}
+
+/* Seçili öğe odaklandığında da aynı renk kalması için */
+.tree-cell:filled:selected:focused {
+    -fx-background-color: #d3d3d3; /* Aynı açık gri */
+}

@@ -1,5 +1,6 @@
 package src;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -21,7 +22,7 @@ public class ToDoAppFX extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("To-Do List with Subtasks");
+        primaryStage.setTitle("To-Doer");
 
         // Root item for the tree
         root = new TreeItem<>("Tasks");
@@ -48,14 +49,23 @@ public class ToDoAppFX extends Application {
 
         Scene scene = new Scene(layout, 500, 500);
         primaryStage.setScene(scene);
+        scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
         primaryStage.show();
 
         // Load tasks from file
         loadTasksFromFile();
 
+        // Kullanıcı bir öğeye tıkladığında eğer `taskField` odaklanmamışsa odaklan
+        taskTree.setOnMouseClicked(event -> {
+            if (!taskField.isFocused()) {
+                Platform.runLater(() -> taskField.requestFocus());
+            }
+        });
+
         // Setup keyboard shortcuts
         setupKeyboardShortcuts(scene);
     }
+
 
     private void addTask() {
         String task = taskField.getText().trim();
@@ -89,8 +99,22 @@ public class ToDoAppFX extends Application {
             String taskText = selectedItem.getValue();
             if (!taskText.startsWith("✅")) {
                 selectedItem.setValue("✅ " + taskText);
-                saveTasksToFile();
+                if(selectedItem.getChildren().size() > 0){
+                    for(TreeItem<String> child : selectedItem.getChildren()){
+                        child.setValue("✅ " + child.getValue());
+                    }
+                }
+                
+            }else{
+                selectedItem.setValue(taskText.substring(2));
+                if(selectedItem.getChildren().size() > 0){
+                    for(TreeItem<String> child : selectedItem.getChildren()){
+                        child.setValue(child.getValue().substring(2));
+                    }
+                }
+                
             }
+            saveTasksToFile();
         }
     }
 
