@@ -30,14 +30,14 @@ public class ToDoAppFX extends Application {
         taskTree = new TreeView<>(root);
         taskTree.setShowRoot(true);
 
-        // `TreeView`'in focus almasını engelle
+        // `TreeView`'in focus almasını engelle, klavye focusunu engelliyor ilerde bunu değiştir
         taskTree.setFocusTraversable(false);
 
         // Input field and buttons
         taskField = new TextField();
         Button addButton = new Button("Add Task");
         Button deleteButton = new Button("Remove");
-        Button completeButton = new Button("Complete");
+        Button completeButton = new Button("Toggle");
 
         addButton.setOnAction(e -> addTask());
         deleteButton.setOnAction(e -> deleteTask());
