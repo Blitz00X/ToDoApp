@@ -1,4 +1,5 @@
 package src;
+// Import necessary JavaFX and IO classes
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -12,15 +13,24 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 import java.io.*;
-import java.util.StringTokenizer;   
+import java.util.ArrayList;
+import java.util.List;
 
 public class ToDoAppFX extends Application {
+    // UI components and constants
     private TreeView<String> taskTree;
     private TreeItem<String> root;
     private TextField taskField;
-    private static final String FILE_NAME = "tasks.txt";
+    private ComboBox<String> listSelector;
+    private Button newListButton;
+    private Button addButton;
+    private Button deleteButton;
+    private Button completeButton;
+    private static final String FILE_EXTENSION = ".txt";
+    private String currentList = "default"; // Default list
+    private static final String LISTS_FILE = "lists.txt"; // File to store lists
 
-        @Override
+    @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("To-Doer");
 
@@ -30,48 +40,137 @@ public class ToDoAppFX extends Application {
         taskTree = new TreeView<>(root);
         taskTree.setShowRoot(true);
 
-        // `TreeView`'in focus almasını engelle, klavye focusunu engelliyor ilerde bunu değiştir
+        // Prevent `TreeView` from gaining focus
         taskTree.setFocusTraversable(false);
 
         // Input field and buttons
         taskField = new TextField();
-        Button addButton = new Button("Add Task");
-        Button deleteButton = new Button("Remove");
-        Button completeButton = new Button("Toggle");
+        addButton = new Button("Add Task");
+        deleteButton = new Button("Remove");
+        completeButton = new Button("Toggle");
 
+        // Set button actions
         addButton.setOnAction(e -> addTask());
         deleteButton.setOnAction(e -> deleteTask());
         completeButton.setOnAction(e -> completeTask());
 
-        // Layout
+        // ComboBox for list selection
+        listSelector = new ComboBox<>();
+        listSelector.setPromptText("Select List");
+        loadLists(); // Load existing lists
+        listSelector.setOnAction(e -> {
+            String selectedList = listSelector.getValue();
+            if (selectedList != null) {
+                switchList(selectedList);
+                disableTaskActions(false);
+            }
+        });
+
+        // Button to create a new list
+        newListButton = new Button("New List");
+        newListButton.setOnAction(e -> createNewList());
+
+        // Layout setup
         HBox inputPanel = new HBox(10, addButton, deleteButton, completeButton);
+        HBox topPanel = new HBox(10, listSelector, newListButton, taskField);
         BorderPane layout = new BorderPane();
         layout.setCenter(taskTree);
-        layout.setTop(taskField);
+        layout.setTop(topPanel);
         layout.setBottom(inputPanel);
 
-        Scene scene = new Scene(layout, 500, 500);
+        Scene scene = new Scene(layout, 600, 500);
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        // Seçili öğenin rengini gri yapmak için CSS dosyasını yükle
-        scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+        // Disable list selection and task actions if no lists exist
+        if (listSelector.getItems().isEmpty()) {
+            listSelector.setDisable(true);
+            disableTaskActions(true);
+            
+        } else {
+            // Disable task actions if no list is selected
+            disableTaskActions(true);
+        }
 
-        // Eğer taskField odaklanmamışsa tekrar focus ver
+        // Refocus on taskField if it loses focus
         scene.setOnMouseClicked(event -> {
             if (!taskField.isFocused()) {
                 Platform.runLater(taskField::requestFocus);
             }
         });
 
-        // Load tasks from file
-        loadTasksFromFile();
-
         // Setup keyboard shortcuts
         setupKeyboardShortcuts(scene);
     }
 
+    // Enable or disable task-related actions
+    private void disableTaskActions(boolean disable) {
+        taskField.setDisable(disable);
+        taskTree.setDisable(disable);
+        addButton.setDisable(disable);
+        deleteButton.setDisable(disable);
+        completeButton.setDisable(disable);
+    }
 
+    // Create a new list
+    private void createNewList() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("New List");
+        dialog.setHeaderText("Enter List Name:");
+        dialog.setContentText("Name:");
+
+        dialog.showAndWait().ifPresent(name -> {
+            if (!name.trim().isEmpty() && !listSelector.getItems().contains(name)) {
+                listSelector.getItems().add(name);
+                saveLists();
+                listSelector.getSelectionModel().select(name); // Select the new list
+                switchList(name);
+
+                // Enable task actions if a list is created for the first time
+                disableTaskActions(false);
+                listSelector.setDisable(false);
+
+                Platform.runLater(taskField::requestFocus);
+            }
+        });
+    }
+
+    // Switch to a different list
+    private void switchList(String listName) {
+        if (listName == null || listName.isEmpty()) return;
+        currentList = listName;
+        root.getChildren().clear(); // Clear previous list
+        loadTasksFromFile(); // Load new list
+    }
+
+    // Load lists from file
+    private void loadLists() {
+        File file = new File(LISTS_FILE);
+        if (!file.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                listSelector.getItems().add(line.trim());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Save lists to file
+    private void saveLists() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(LISTS_FILE))) {
+            for (String list : listSelector.getItems()) {
+                writer.write(list);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Add a new task
     private void addTask() {
         String task = taskField.getText().trim();
         if (!task.isEmpty()) {
@@ -90,94 +189,84 @@ public class ToDoAppFX extends Application {
         }
     }
 
+    // Delete a selected task
     private void deleteTask() {
         TreeItem<String> selectedItem = taskTree.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && selectedItem != root) {
-            selectedItem.getParent().getChildren().remove(selectedItem);
-            saveTasksToFile();
+        if (selectedItem != null) {
+            if (selectedItem == root) {
+                // If the root item "Tasks" is deleted, delete the list
+                deleteCurrentList();
+            } else {
+                selectedItem.getParent().getChildren().remove(selectedItem);
+                saveTasksToFile();
+            }
         }
     }
 
+    // Delete the current list
+    private void deleteCurrentList() {
+        listSelector.getItems().remove(currentList);
+        saveLists();
+        File file = new File(currentList + FILE_EXTENSION);
+        if (file.exists()) {
+            file.delete();
+        }
+        if (!listSelector.getItems().isEmpty()) {
+            listSelector.getSelectionModel().selectFirst();
+            switchList(listSelector.getValue());
+            
+            
+        } else {
+            disableTaskActions(true);
+            listSelector.setDisable(true);
+        }
+        
+    }
+
+    // Mark a task as complete or incomplete
     private void completeTask() {
         TreeItem<String> selectedItem = taskTree.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem != root) {
             String taskText = selectedItem.getValue();
             if (!taskText.startsWith("✅")) {
                 selectedItem.setValue("✅ " + taskText);
-                if(selectedItem.getChildren().size() > 0){
-                    for(TreeItem<String> child : selectedItem.getChildren()){
-                        child.setValue("✅ " + child.getValue());
-                    }
-                }
-                
-            }else{
+            } else {
                 selectedItem.setValue(taskText.substring(2));
-                if(selectedItem.getChildren().size() > 0){
-                    for(TreeItem<String> child : selectedItem.getChildren()){
-                        child.setValue(child.getValue().substring(2));
-                    }
-                }
-                
             }
             saveTasksToFile();
         }
     }
 
+    // Save tasks to file
     private void saveTasksToFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
-            saveNode(root, writer, 0);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentList + FILE_EXTENSION))) {
+            for (TreeItem<String> child : root.getChildren()) {
+                writer.write(child.getValue());
+                writer.newLine();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void saveNode(TreeItem<String> node, BufferedWriter writer, int depth) throws IOException {
-        if (node != root) {
-            for (int i = 0; i < depth; i++) {
-                writer.write("\t");
-            }
-            writer.write(node.getValue());
-            writer.newLine();
-        }
-        for (TreeItem<String> child : node.getChildren()) {
-            saveNode(child, writer, depth + 1);
-        }
-    }
-
+    // Load tasks from file
     private void loadTasksFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+        File file = new File(currentList + FILE_EXTENSION);
+        if (!file.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-            TreeItem<String> currentParent = root;
-            int previousDepth = 0;
-
             while ((line = reader.readLine()) != null) {
-                int depth = line.indexOf(line.trim());
-                line = line.trim();
-                TreeItem<String> newItem = new TreeItem<>(line);
-
-                if (depth == previousDepth) {
-                    currentParent.getChildren().add(newItem);
-                } else if (depth > previousDepth) {
-                    if (!currentParent.getChildren().isEmpty()) {
-                        currentParent = currentParent.getChildren().get(currentParent.getChildren().size() - 1);
-                    }
-                    currentParent.getChildren().add(newItem);
-                } else {
-                    while (previousDepth > depth) {
-                        currentParent = currentParent.getParent();
-                        previousDepth--;
-                    }
-                    currentParent.getChildren().add(newItem);
-                }
-                previousDepth = depth;
+                root.getChildren().add(new TreeItem<>(line));
             }
         } catch (IOException e) {
-            System.out.println("Önceki görevler bulunamadı.");
+            e.printStackTrace();
         }
     }
 
+    // Setup keyboard shortcuts
     private void setupKeyboardShortcuts(Scene scene) {
-        // Add Task: Ctrl + Space
+        // Add new task: Ctrl + Space
         scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (new KeyCodeCombination(KeyCode.SPACE, KeyCombination.CONTROL_DOWN).match(event)) {
                 addTask();
@@ -185,7 +274,7 @@ public class ToDoAppFX extends Application {
             }
         });
 
-        // Delete Task: Ctrl + X
+        // Delete task: Ctrl + X
         scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (new KeyCodeCombination(KeyCode.X, KeyCombination.CONTROL_DOWN).match(event)) {
                 deleteTask();
@@ -193,13 +282,37 @@ public class ToDoAppFX extends Application {
             }
         });
 
-        // Complete Task: Ctrl + S
+        // Mark task as complete: Ctrl + S
         scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN).match(event)) {
                 completeTask();
                 event.consume();
             }
         });
+
+        // Create new list: Ctrl + N
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN).match(event)) {
+                createNewList();
+                event.consume();
+            }
+        });
+
+        // Switch between lists: Ctrl + Tab
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (new KeyCodeCombination(KeyCode.TAB, KeyCombination.CONTROL_DOWN).match(event)) {
+                switchToNextList();
+                event.consume();
+            }
+        });
+    }
+
+    // Switch to the next list in the ComboBox
+    private void switchToNextList() {
+        int currentIndex = listSelector.getSelectionModel().getSelectedIndex();
+        int nextIndex = (currentIndex + 1) % listSelector.getItems().size(); // Circular switch
+        listSelector.getSelectionModel().select(nextIndex);
+        switchList(listSelector.getItems().get(nextIndex));
     }
 
     public static void main(String[] args) {
