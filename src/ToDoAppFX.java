@@ -40,7 +40,7 @@ public class ToDoAppFX extends Application {
         taskTree = new TreeView<>(root);
         taskTree.setShowRoot(true);
 
-        // Prevent `TreeView` from gaining focus
+        // Prevent TreeView from gaining focus
         taskTree.setFocusTraversable(false);
 
         // Input field and buttons
@@ -252,29 +252,69 @@ public class ToDoAppFX extends Application {
     // Save tasks to file
     private void saveTasksToFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentList + FILE_EXTENSION))) {
-            for (TreeItem<String> child : root.getChildren()) {
-                writer.write(child.getValue());
-                writer.newLine();
-            }
+            saveNode(root, writer, 0);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+    
+    private void saveNode(TreeItem<String> node, BufferedWriter writer, int depth) throws IOException {
+        // Skip the root node label
+        if (node != root) {
+            for (int i = 0; i < depth; i++) {
+                writer.write("\t");  // Indent to represent the depth
+            }
+            writer.write(node.getValue());
+            writer.newLine();
+        }
+        for (TreeItem<String> child : node.getChildren()) {
+            saveNode(child, writer, depth + 1);
+        }
+    }
 
-    // Load tasks from file
+        // Load tasks from file using an adjusted depth calculation
     private void loadTasksFromFile() {
-        File file = new File(currentList + FILE_EXTENSION);
-        if (!file.exists()) return;
+        try (BufferedReader reader = new BufferedReader(new FileReader(currentList + FILE_EXTENSION))) {
+            List<TreeItem<String>> stack = new ArrayList<>();
+            stack.add(root); // index 0: root
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                root.getChildren().add(new TreeItem<>(line));
+                int depth = countLeadingTabsOrSpaces(line);
+                // Adjust effective depth: subtract 1 if there's at least one tab/space.
+                int effectiveDepth = depth > 0 ? depth - 1 : 0;
+                String taskText = line.trim();
+                TreeItem<String> newItem = new TreeItem<>(taskText);
+
+                // Pop from the stack until it matches the effective depth + 1
+                while (stack.size() > effectiveDepth + 1) {
+                    stack.remove(stack.size() - 1);
+                }
+
+                // Attach the new item to its parent
+                stack.get(effectiveDepth).getChildren().add(newItem);
+                // Push the new item onto the stack for future children
+                stack.add(newItem);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("No previous tasks found.");
         }
     }
+
+    // This method counts both tabs and spaces as indentation
+    private int countLeadingTabsOrSpaces(String line) {
+        int count = 0;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '\t' || c == ' ') {
+                count++;
+            } else {
+                break;
+            }
+        }
+        return count;
+    }
+
 
     // Setup keyboard shortcuts
     private void setupKeyboardShortcuts(Scene scene) {
