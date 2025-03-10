@@ -178,6 +178,10 @@ public class ToDoAppFX extends Application {
             TreeItem<String> newItem = new TreeItem<>(task);
 
             if (selectedItem != null && selectedItem != root) {
+                // If the selected item is completed, mark the new task as completed
+                if (selectedItem.getValue().startsWith("✅")) {
+                    newItem.setValue("✅ " + task);
+                }
                 selectedItem.getChildren().add(newItem);
                 selectedItem.setExpanded(true);
             } else {
@@ -223,17 +227,25 @@ public class ToDoAppFX extends Application {
         
     }
 
-    // Mark a task as complete or incomplete
+    // Mark a task and its subtasks as complete or incomplete
     private void completeTask() {
         TreeItem<String> selectedItem = taskTree.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem != root) {
-            String taskText = selectedItem.getValue();
-            if (!taskText.startsWith("✅")) {
-                selectedItem.setValue("✅ " + taskText);
-            } else {
-                selectedItem.setValue(taskText.substring(2));
-            }
+            toggleTaskCompletion(selectedItem);
             saveTasksToFile();
+        }
+    }
+
+    // Toggle the completion status of a task and its subtasks
+    private void toggleTaskCompletion(TreeItem<String> taskItem) {
+        String taskText = taskItem.getValue();
+        if (!taskText.startsWith("✅")) {
+            taskItem.setValue("✅ " + taskText);
+        } else {
+            taskItem.setValue(taskText.substring(2));
+        }
+        for (TreeItem<String> child : taskItem.getChildren()) {
+            toggleTaskCompletion(child);
         }
     }
 
