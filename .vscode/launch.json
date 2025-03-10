@@ -5,7 +5,7 @@
             "type": "java",
             "request": "launch",
             "name": "Launch JavaFX",
-            "mainClass": "src.ToDoAppFX",
+            "mainClass": "src.DaySelectorApp",
             "vmArgs": "--module-path /usr/share/openjfx/lib --add-modules javafx.controls,javafx.fxml,javafx.graphics"
         }
     ]

@@ -1,8 +1,5 @@
 Sabah_kalkma:R:x
 Dersler:R:x
-    Math207:1:x
-    Phys100:1:x
-    
+	Math207:1:x
+	Phys100:1:x
 Math207_Çalışma:1:x
-
-     
