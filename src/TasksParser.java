@@ -11,18 +11,18 @@ import java.util.List;
 public class TasksParser {
 
     /**
-     * "tasks.txt" gibi dosya yolunu alır, satır satır okur,
-     * her satırı TaskReader.parseLine ile TaskNode'a çevirir,
-     * sonra indent değerlerine göre parent-child ilişkisini oluşturur.
+     * Takes a file path like "tasks.txt", reads it line by line,
+     * converts each line into a TaskNode using TaskReader.parseLine,
+     * and then establishes parent-child relationships based on indentation levels.
      */
     public static List<TaskNode> parseTasks(String filePath) throws IOException {
-        // Dosyadaki tüm satırları okuyalım
+        // Read all lines from the file
         List<String> lines = readAllLines(filePath);
 
-        // Bu satırları TaskNode listesine çevirelim
+        // Convert lines into a list of TaskNodes
         List<TaskNode> allNodes = TaskReader.parseLines(lines);
 
-        // Hiyerarşiyi kurmak için stack yaklaşımı
+        // Use stack approach to build the hierarchy
         List<TaskNode> hierarchy = new ArrayList<>();
         Deque<TaskNode> stack = new ArrayDeque<>();
 
@@ -41,6 +41,9 @@ public class TasksParser {
         return hierarchy;
     }
 
+    /**
+     * Reads all non-empty lines from a file and returns them as a list.
+     */
     private static List<String> readAllLines(String filePath) throws IOException {
         List<String> lines = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {

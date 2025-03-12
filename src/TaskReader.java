@@ -6,33 +6,33 @@ import java.util.List;
 public class TaskReader {
 
     /**
-     * Bir satır ("    Math207:1:x" gibi) okuyup TaskNode oluşturan metod.
-     *  - Girinti sayısını belirler (tab ve boşlukları 4-space = 1-tab şeklinde sayıyoruz).
-     *  - "görev_adi:gün:x" formatını parçalayıp TaskNode oluşturur.
-     *  - displayName'i alt tireleri boşluk yaparak ayarlar.
+     * Parses a line (e.g., "    Math207:1:x") and creates a TaskNode.
+     *  - Determines indentation count (counts tabs and spaces, considering 4 spaces = 1 tab).
+     *  - Splits the format "task_name:day:x" into TaskNode components.
+     *  - Sets displayName by replacing underscores with spaces.
      */
     public static TaskNode parseLine(String line) {
         int indentCount = countLeadingIndent(line);
         String trimmed = line.trim();
 
-        // "Görev_Adi:gün:x" formatındaysa parts[0]=Görev_Adi, parts[1]=gün
+        // If the format is "Task_Name:day:x", then parts[0]=Task_Name, parts[1]=day
         String[] parts = trimmed.split(":");
         if (parts.length < 2) {
-            return null; // geçersiz satır
+            return null; // Invalid line
         }
         String name = parts[0];
         String day = parts[1];
 
-        // TaskNode oluştur
+        // Create TaskNode
         TaskNode node = new TaskNode(name, day, indentCount);
-        // displayName'de alt tireleri boşluk yapıyoruz
+        // Replace underscores with spaces in displayName
         node.setDisplayName(name.replace('_', ' '));
 
         return node;
     }
 
     /**
-     * Dosyadaki tüm satırları parseLine ile okuyup TaskNode listesi döndürür
+     * Reads all lines in a file and converts them into a list of TaskNodes using parseLine.
      */
     public static List<TaskNode> parseLines(List<String> lines) {
         List<TaskNode> nodeList = new ArrayList<>();
@@ -46,8 +46,8 @@ public class TaskReader {
     }
 
     /**
-     * Hem tab hem boşluk karakterlerini sayarak indent değeri hesaplayan metod.
-     * 4 boşluk = 1 tab eşdeğerliği.
+     * Calculates the indentation level by counting both tabs and spaces.
+     * Assumes 4 spaces = 1 tab.
      */
     private static int countLeadingIndent(String line) {
         int spaceCount = 0;
@@ -55,12 +55,12 @@ public class TaskReader {
             if (c == ' ') {
                 spaceCount++;
             } else if (c == '\t') {
-                spaceCount += 4; // 1 tab = 4 space
+                spaceCount += 4; // 1 tab = 4 spaces
             } else {
                 break;
             }
         }
-        // 4 boşluk = 1 indent
+        // Convert spaces to indentation level (4 spaces = 1 indent level)
         return spaceCount / 4;
     }
 }

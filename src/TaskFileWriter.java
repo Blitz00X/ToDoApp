@@ -10,7 +10,8 @@ import java.util.List;
 public class TaskFileWriter {
 
     /**
-     * Root TaskNode listesini, day değerine göre 1..7.txt'ye (veya R ise hepsine) yazar.
+     * Writes a list of root TaskNodes to files based on their day values (1..7.txt),
+     * or to all files if the day value is 'R'.
      */
     public static void writeTasksByDay(List<TaskNode> rootNodes) throws IOException {
         String[] dayFiles = {"1.txt", "2.txt", "3.txt", "4.txt", "5.txt", "6.txt", "7.txt"};
@@ -29,24 +30,24 @@ public class TaskFileWriter {
     }
 
     private static void writeNodeRecursive(TaskNode node, int indent, BufferedWriter[] writers) throws IOException {
-        // day = 'R' -> 1..7, yoksa int parse
+        // If day = 'R', write to all files; otherwise, parse the integer value.
         List<Integer> targetDays = new ArrayList<>();
         if (node.getDay().equalsIgnoreCase("R")) {
-            targetDays.addAll(Arrays.asList(1,2,3,4,5,6,7));
+            targetDays.addAll(Arrays.asList(1, 2, 3, 4, 5, 6, 7));
         } else {
             try {
                 int d = Integer.parseInt(node.getDay());
                 targetDays.add(d);
             } catch (NumberFormatException e) {
-                // geçersiz ise atla
+                // Skip invalid day values
                 return;
             }
         }
 
-        // Indent'li satır oluştur
+        // Create the indented line
         String line = createLineWithIndent(node, indent);
 
-        // Hedef günlere yaz
+        // Write to the target day files
         for (Integer d : targetDays) {
             if (d >= 1 && d <= 7) {
                 BufferedWriter bw = writers[d - 1];
@@ -55,20 +56,20 @@ public class TaskFileWriter {
             }
         }
 
-        // Çocuklar
+        // Process child nodes
         for (TaskNode child : node.getChildren()) {
             writeNodeRecursive(child, indent + 1, writers);
         }
     }
 
     /**
-     * "görev_adi:day:x" formatını (girintili) yazar.
-     * Burada node.getName() orijinal metindir ("Sabah_kalkma"), alt tireli.
+     * Writes a line in the format "task_name:day:x" with proper indentation.
+     * The node.getName() method retains the original format (e.g., "Morning_wakeup").
      */
     private static String createLineWithIndent(TaskNode node, int indent) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < indent; i++) {
-            sb.append("\t"); // her seviye için 1 tab
+            sb.append("\t"); // Use one tab per level of indentation
         }
         sb.append(node.getName())
           .append(":")

@@ -1,5 +1,10 @@
 package src;
 
+/**
+ * DaySelectorApp is a JavaFX application that allows users to select a day
+ * and view tasks for that day in a hierarchical TreeView.
+ */
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
@@ -18,26 +23,27 @@ public class DaySelectorApp extends Application {
     private Map<Integer, TreeView<String>> dayTreeViews = new HashMap<>();
 
     /**
-     * Tek seferde:
-     * 1) tasks.txt'yi parse -> 1..7.txt oluştur,
-     * 2) JavaFX arayüzünü başlat.
+     * Main method:
+     * 1) Parses tasks.txt and creates separate files for each day (1..7.txt)
+     * 2) Starts the JavaFX UI
      */
     public static void main(String[] args) {
-        // 1) tasks.txt -> 1..7.txt
+        // 1) Convert tasks.txt to 1..7.txt
         try {
             List<TaskNode> rootTasks = TasksParser.parseTasks("tasks.txt");
             TaskFileWriter.writeTasksByDay(rootTasks);
-            System.out.println("tasks.txt'den 1..7.txt dosyaları oluşturuldu.");
+            System.out.println("tasks.txt converted to 1...7.txt");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        // 2) JavaFX
+        // 2) Launch JavaFX UI
         launch(args);
     }
 
     @Override
     public void start(Stage primaryStage) {
+        // Dropdown to select the day
         ComboBox<Integer> dayCombo = new ComboBox<>();
         for (int i = 1; i <= 7; i++) {
             dayCombo.getItems().add(i);
@@ -47,59 +53,59 @@ public class DaySelectorApp extends Application {
         BorderPane root = new BorderPane();
         root.setTop(dayCombo);
 
-        // 1..7.txt dosyalarını parse edip TreeView oluştur
+        // Parse 1..7.txt files and create TreeView for each day
         for (int day = 1; day <= 7; day++) {
             TreeView<String> treeView = buildTreeViewFromFile(day + ".txt");
             dayTreeViews.put(day, treeView);
         }
 
-        // ComboBox değiştiğinde ekrana o TreeView'ı koyalım
+        // Display corresponding TreeView when day selection changes
         dayCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             root.setCenter(dayTreeViews.get(newVal));
         });
-        // Varsayılan görünüm: 1.gün
+        
+        // Default view: Day 1
         root.setCenter(dayTreeViews.get(1));
 
         Scene scene = new Scene(root, 600, 400);
-        primaryStage.setTitle("Günlük Görevler");
+        primaryStage.setTitle("Daily Tasks");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     /**
-     * Verilen gün dosyasını (ör: "1.txt") parse edip
-     * TreeView'e dönüştüren metod.
+     * Reads and parses files (1.txt to 7.txt) and converts them into TreeView.
      */
     private TreeView<String> buildTreeViewFromFile(String fileName) {
-        // Dosya satırlarını parse edip hiyerarşik TaskNode listesi al
+        
         List<TaskNode> rootTasks = parseDayFile(fileName);
 
         TreeItem<String> invisibleRoot = new TreeItem<>("ROOT");
         invisibleRoot.setExpanded(true);
 
-        // Her rootTask'ı TreeItem'a ekle
+        // Add each root task as a TreeItem
         for (TaskNode node : rootTasks) {
             TreeItem<String> item = createTreeItem(node);
             invisibleRoot.getChildren().add(item);
         }
 
         TreeView<String> treeView = new TreeView<>(invisibleRoot);
-        treeView.setShowRoot(false); // "ROOT" görünmesin
+        treeView.setShowRoot(false); // Hide "ROOT"
         return treeView;
     }
 
     /**
-     * 1.txt gibi bir dosyayı, TaskReader+stack yöntemiyle hiyerarşiye dönüştürür.
+     * Reads a file (e.g., 1.txt) and converts it into a hierarchical structure using a stack method.
      */
     private List<TaskNode> parseDayFile(String fileName) {
         List<TaskNode> dayRootNodes = new ArrayList<>();
         try {
             List<String> lines = readAllLines(fileName);
 
-            // Tek tek satırlardan TaskNode listesi
+            // Convert individual lines into TaskNode objects
             List<TaskNode> allNodes = TaskReader.parseLines(lines);
 
-            // Stack ile parent-child ilişkisi
+            // Use stack to establish parent-child relationships
             Deque<TaskNode> stack = new ArrayDeque<>();
             for (TaskNode current : allNodes) {
                 while (!stack.isEmpty() && current.getIndentLevel() <= stack.peek().getIndentLevel()) {
@@ -120,11 +126,10 @@ public class DaySelectorApp extends Application {
     }
 
     /**
-     * Bir TaskNode'u (ve alt çocuklarını) JavaFX TreeItem'a dönüştürür.
-     * Burada alt tire yerine boşluk gösterilen displayName'i kullanıyoruz.
+     * Converts a TaskNode (and its children) into a JavaFX TreeItem.
+     * Uses displayName (replacing underscores with spaces) for UI display.
      */
     private TreeItem<String> createTreeItem(TaskNode node) {
-        // UI'da displayName -> "görev adi"
         TreeItem<String> item = new TreeItem<>(node.getDisplayName());
         for (TaskNode child : node.getChildren()) {
             item.getChildren().add(createTreeItem(child));
@@ -132,6 +137,9 @@ public class DaySelectorApp extends Application {
         return item;
     }
 
+    /**
+     * Reads all non-empty lines from a file and returns them as a list.
+     */
     private List<String> readAllLines(String filePath) throws IOException {
         List<String> lines = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {

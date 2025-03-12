@@ -1,12 +1,13 @@
 package src;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class TaskNode {
-    private String name;         // Örn: "Sabah_kalkma"
-    private String displayName;  // Örn: "Sabah kalkma" (UI'da gösterilecek)
-    private String day;          // 'R' veya '1'..'7'
-    private int indentLevel;     // Girinti seviyesi
+    private String name;         // Example: "Morning_wakeup"
+    private String displayName;  // Example: "Morning wakeup" (Displayed in UI)
+    private String day;          // 'R' or '1'..'7'
+    private int indentLevel;     // Indentation level
     private List<TaskNode> children = new ArrayList<>();
     private TaskNode parent;
 
@@ -14,7 +15,6 @@ public class TaskNode {
         this.name = name;
         this.day = day;
         this.indentLevel = indentLevel;
-        // Başlangıçta displayName = name. Ayarlamak istersek setDisplayName kullanabiliriz.
         this.displayName = name;
     }
 
@@ -56,7 +56,7 @@ public class TaskNode {
     }
 
     /**
-     * Dosyaya yazarken orijinal name'i ("Sabah_kalkma" vb.) kullanıyoruz.
+     * Uses the original name (e.g., "Morning_wakeup") when writing to a file.
      */
     @Override
     public String toString() {

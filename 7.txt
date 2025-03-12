@@ -1,2 +1,8 @@
 Sabah_kalkma:R:x
+Namaz_ve_zikirler:R:x
+	Sabah_Namazı:R:x
+	Öğle_Namazı:R:x
+	İkindi_Namazı:R:x
+	Akşam_Namazı:R:x
+	Yatsı;Namazı:R:x
 Dersler:R:x
