@@ -10,6 +10,7 @@ public class TaskNode {
     private int indentLevel;     // Indentation level
     private List<TaskNode> children = new ArrayList<>();
     private TaskNode parent;
+    private boolean isCompleted = false;
 
     public TaskNode(String name, String day, int indentLevel) {
         this.name = name;
@@ -46,6 +47,14 @@ public class TaskNode {
         return parent;
     }
 
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+
+    public void setCompleted(boolean completed) {
+        isCompleted = completed;
+    }
+
     public void setParent(TaskNode parent) {
         this.parent = parent;
     }
@@ -60,6 +69,10 @@ public class TaskNode {
      */
     @Override
     public String toString() {
-        return name + ":" + day + ":x";
+        String isCompletedStr = isCompleted ? ":a" : ":x";
+        
+        
+        
+        return name + ":" + day + isCompletedStr;
     }
 }

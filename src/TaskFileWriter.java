@@ -71,10 +71,7 @@ public class TaskFileWriter {
         for (int i = 0; i < indent; i++) {
             sb.append("\t"); // Use one tab per level of indentation
         }
-        sb.append(node.getName())
-          .append(":")
-          .append(node.getDay())
-          .append(":x");
+        sb.append(node.toString());
         return sb.toString();
     }
 }

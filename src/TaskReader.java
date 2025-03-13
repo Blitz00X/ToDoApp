@@ -22,11 +22,18 @@ public class TaskReader {
         }
         String name = parts[0];
         String day = parts[1];
+        String accomplish = parts[2];
+        
 
         // Create TaskNode
         TaskNode node = new TaskNode(name, day, indentCount);
         // Replace underscores with spaces in displayName
         node.setDisplayName(name.replace('_', ' '));
+
+
+        if (accomplish.equals("a")){
+            node.setCompleted(true);
+        }else{node.setCompleted(false);}
 
         return node;
     }
