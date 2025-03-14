@@ -1,23 +1,20 @@
 Sabah_kalkma:R:x
 Namaz_ve_zikirler:R:x
-    Sabah_Namazı:R:x
-    Öğle_Namazı:R:x
-    İkindi_Namazı:R:x
-    Akşam_Namazı:R:x
-    Yatsı;Namazı:R:x
-
+	Sabah_Namazı:R:x
+	Öğle_Namazı:R:x
+	İkindi_Namazı:R:x
+	Akşam_Namazı:R:x
+	Yatsı;Namazı:R:x
 Dersler:R:x
-    Math207:1:x
-    Phys100:1:x
-    Ger202:2:x
-    phys100lab:2:x
-    ce223:3:x
-    eng210:3:x
-    ger202:4:x
-    math207:4:x
-    ce223:5:x
+	Math207:1:x
+	Phys100:1:x
+	Ger202:2:x
+	phys100lab:2:x
+	ce223:3:x
+	eng210:3:x
+	ger202:4:x
+	math207:4:x
+	ce223:5:x
 Math207_Çalışma:1:x
-    video:1:x
+	video:1:x
 Phys100_Çalışma:2:x
-
-     

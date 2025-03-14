@@ -3,29 +3,28 @@ package src;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
+/**
+ * TasksParser reads the main tasks file (tasks.txt) and converts it into a hierarchy of TaskNodes.
+ * It uses TaskReader to parse each line and then uses a stack-based approach to establish parent-child relationships.
+ */
 public class TasksParser {
 
     /**
-     * Takes a file path like "tasks.txt", reads it line by line,
-     * converts each line into a TaskNode using TaskReader.parseLine,
-     * and then establishes parent-child relationships based on indentation levels.
+     * Parses the given file into a hierarchical list of TaskNodes.
+     *
+     * @param filePath The path to the tasks file.
+     * @return A list of root TaskNodes.
+     * @throws IOException If reading the file fails.
      */
     public static List<TaskNode> parseTasks(String filePath) throws IOException {
-        // Read all lines from the file
         List<String> lines = readAllLines(filePath);
-
-        // Convert lines into a list of TaskNodes
         List<TaskNode> allNodes = TaskReader.parseLines(lines);
-
-        // Use stack approach to build the hierarchy
         List<TaskNode> hierarchy = new ArrayList<>();
         Deque<TaskNode> stack = new ArrayDeque<>();
 
+        // Build hierarchy: attach each node as a child of the last node with a lower indent level.
         for (TaskNode current : allNodes) {
             while (!stack.isEmpty() && current.getIndentLevel() <= stack.peek().getIndentLevel()) {
                 stack.pop();
@@ -37,12 +36,15 @@ public class TasksParser {
             }
             stack.push(current);
         }
-
         return hierarchy;
     }
 
     /**
-     * Reads all non-empty lines from a file and returns them as a list.
+     * Reads all non-empty lines from the specified file.
+     *
+     * @param filePath The path to the file.
+     * @return A list of non-empty lines.
+     * @throws IOException If reading the file fails.
      */
     private static List<String> readAllLines(String filePath) throws IOException {
         List<String> lines = new ArrayList<>();
