@@ -30,6 +30,13 @@ public class ToDoAppFX extends Application {
     private String currentList = "default"; // Default list
     private static final String LISTS_FILE = "lists.txt"; // File to store lists
 
+    // Special views and day labels
+    private static final String WEEK_VIEW = "week";
+    private static final String[] DAYS_OF_WEEK = {
+            "Monday", "Tuesday", "Wednesday", "Thursday",
+            "Friday", "Saturday", "Sunday"
+    };
+
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("To-Doer");
@@ -140,7 +147,22 @@ public class ToDoAppFX extends Application {
         if (listName == null || listName.isEmpty()) return;
         currentList = listName;
         root.getChildren().clear(); // Clear previous list
-        loadTasksFromFile(); // Load new list
+
+        if (WEEK_VIEW.equalsIgnoreCase(listName)) {
+            showWeekView();
+        } else {
+            loadTasksFromFile(); // Load new list
+        }
+    }
+
+    // Display all tasks grouped by day in the week view
+    private void showWeekView() {
+        for (String day : DAYS_OF_WEEK) {
+            TreeItem<String> dayItem = new TreeItem<>(day);
+            dayItem.setExpanded(true);
+            root.getChildren().add(dayItem);
+            loadTasksFromFile(dayItem, day);
+        }
     }
 
     // Load lists from file
@@ -249,27 +271,58 @@ public class ToDoAppFX extends Application {
         }
     }
 
-    // Save tasks to file
+    // Save tasks to file, including nested subtasks
     private void saveTasksToFile() {
+        if (WEEK_VIEW.equalsIgnoreCase(currentList)) {
+            return; // Week view is a summary and has no backing file
+        }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentList + FILE_EXTENSION))) {
             for (TreeItem<String> child : root.getChildren()) {
-                writer.write(child.getValue());
-                writer.newLine();
+                saveTaskHierarchy(writer, child, 0);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    // Recursively persist a task and its children with indentation to preserve hierarchy
+    private void saveTaskHierarchy(BufferedWriter writer, TreeItem<String> item, int depth) throws IOException {
+        for (int i = 0; i < depth; i++) {
+            writer.write("\t");
+        }
+        writer.write(item.getValue());
+        writer.newLine();
+        for (TreeItem<String> child : item.getChildren()) {
+            saveTaskHierarchy(writer, child, depth + 1);
+        }
+    }
+
     // Load tasks from file
     private void loadTasksFromFile() {
-        File file = new File(currentList + FILE_EXTENSION);
+        loadTasksFromFile(root, currentList);
+    }
+
+    // Overloaded loader that populates a parent item with tasks from the given list
+    private void loadTasksFromFile(TreeItem<String> parent, String listName) {
+        File file = new File(listName + FILE_EXTENSION);
         if (!file.exists()) return;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
+            List<TreeItem<String>> stack = new ArrayList<>();
+            stack.add(parent); // Depth 0
             while ((line = reader.readLine()) != null) {
-                root.getChildren().add(new TreeItem<>(line));
+                int depth = 0;
+                while (depth < line.length() && line.charAt(depth) == '\t') {
+                    depth++;
+                }
+                String value = line.substring(depth);
+                TreeItem<String> item = new TreeItem<>(value);
+                while (stack.size() > depth + 1) {
+                    stack.remove(stack.size() - 1);
+                }
+                stack.get(depth).getChildren().add(item);
+                stack.add(item);
             }
         } catch (IOException e) {
             e.printStackTrace();
